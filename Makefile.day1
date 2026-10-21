@@ -1,0 +1,24 @@
+# Makefile.day1 - builds the Day 1 programs.
+# Use it with:  make -f Makefile.day1
+# (Your main Makefile is untouched. Merge these rules in whenever you like.)
+
+CC     = gcc
+CFLAGS = -Wall -Wextra -pthread -Icommon -Istorage
+
+STORAGE = storage/storage.c
+
+all: seed dump race
+
+seed: tests/seed.c $(STORAGE) common/structs.h storage/storage.h
+	$(CC) $(CFLAGS) -o seed tests/seed.c $(STORAGE)
+
+dump: tests/dump.c $(STORAGE) common/structs.h storage/storage.h
+	$(CC) $(CFLAGS) -o dump tests/dump.c $(STORAGE)
+
+race: tests/race.c $(STORAGE) common/structs.h storage/storage.h
+	$(CC) $(CFLAGS) -o race tests/race.c $(STORAGE)
+
+clean:
+	rm -f seed dump race
+
+.PHONY: all clean
