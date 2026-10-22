@@ -1,4 +1,9 @@
 /* storage.c - record read/write using plain system calls, plus fcntl locks. */
+
+/* Day 3: F_OFD_SETLKW is a GNU extension. This define MUST come before the
+ * first #include, otherwise <fcntl.h> will not declare it. */
+#define _GNU_SOURCE
+
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -64,10 +69,18 @@ int storage_write(int fd, int id, const void *buf, size_t rec_size)
     return 0;
 }
 
-/* ---------- Day 2: locking ---------- */
+/* ---------- Day 2: locking (changed to OFD locks on Day 3) ---------- */
 
 /* Shared helper: apply one lock request on bytes [start, start+len).
- * F_SETLKW = "set lock, and Wait if someone else holds it". */
+ *
+ * F_OFD_SETLKW = "set an Open File Description lock, and Wait if someone
+ * else holds it". The lock belongs to the open file description (the thing
+ * open() creates), NOT to the process. Each client thread opens its own fd,
+ * so each thread is its own lock owner and threads block each other.
+ *
+ * (The classic F_SETLKW lock belonged to the whole process, so threads of
+ * one process never blocked each other. threadrace showed the lost updates.)
+ */
 static int lock_range(int fd, short type, off_t start, off_t len)
 {
     struct flock fl;
@@ -77,9 +90,10 @@ static int lock_range(int fd, short type, off_t start, off_t len)
     fl.l_whence = SEEK_SET;    /* l_start counts from the start of the file */
     fl.l_start  = start;
     fl.l_len    = len;
+    fl.l_pid    = 0;           /* OFD locks REQUIRE this to be 0 */
 
     /* A signal can interrupt the wait; if so, just wait again. */
-    while (fcntl(fd, F_SETLKW, &fl) == -1) {
+    while (fcntl(fd, F_OFD_SETLKW, &fl) == -1) {
         if (errno != EINTR)
             return -1;
     }
