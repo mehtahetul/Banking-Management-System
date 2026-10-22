@@ -1,10 +1,17 @@
-/* storage.c - record read/write using plain system calls (Day 1, no locking). */
+/* storage.c - record read/write using plain system calls, plus fcntl locks. */
+#include <errno.h>
 #include <fcntl.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include "storage.h"
+
+/* The append lock locks ONE byte at this offset. No real record will ever
+ * live this far into a file, so the byte is used only as a "someone is
+ * appending" flag. (Locking bytes beyond the end of a file is allowed.) */
+#define APPEND_LOCK_OFFSET  1000000000L
 
 int storage_open(const char *path)
 {
@@ -55,4 +62,50 @@ int storage_write(int fd, int id, const void *buf, size_t rec_size)
     if (write(fd, buf, rec_size) != (ssize_t)rec_size)
         return -1;
     return 0;
+}
+
+/* ---------- Day 2: locking ---------- */
+
+/* Shared helper: apply one lock request on bytes [start, start+len).
+ * F_SETLKW = "set lock, and Wait if someone else holds it". */
+static int lock_range(int fd, short type, off_t start, off_t len)
+{
+    struct flock fl;
+
+    memset(&fl, 0, sizeof(fl));
+    fl.l_type   = type;        /* F_RDLCK, F_WRLCK or F_UNLCK */
+    fl.l_whence = SEEK_SET;    /* l_start counts from the start of the file */
+    fl.l_start  = start;
+    fl.l_len    = len;
+
+    /* A signal can interrupt the wait; if so, just wait again. */
+    while (fcntl(fd, F_SETLKW, &fl) == -1) {
+        if (errno != EINTR)
+            return -1;
+    }
+    return 0;
+}
+
+int storage_lock(int fd, int id, size_t rec_size, int type)
+{
+    if (id < 0 || (type != F_RDLCK && type != F_WRLCK))
+        return -1;
+    return lock_range(fd, (short)type, (off_t)id * (off_t)rec_size, (off_t)rec_size);
+}
+
+int storage_unlock(int fd, int id, size_t rec_size)
+{
+    if (id < 0)
+        return -1;
+    return lock_range(fd, F_UNLCK, (off_t)id * (off_t)rec_size, (off_t)rec_size);
+}
+
+int storage_append_lock(int fd)
+{
+    return lock_range(fd, F_WRLCK, (off_t)APPEND_LOCK_OFFSET, 1);
+}
+
+int storage_append_unlock(int fd)
+{
+    return lock_range(fd, F_UNLCK, (off_t)APPEND_LOCK_OFFSET, 1);
 }
