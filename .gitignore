@@ -4,3 +4,7 @@ seed
 dump
 race
 threadrace
+protosize
+bankserver
+bankserver_fast
+testclient

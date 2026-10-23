@@ -55,6 +55,8 @@ struct User {                 /* users.dat */
     char email[50];
     int  account_id;          /* customer's account, NO_ID for staff */
     int  logged_in;           /* 0/1, one-session-per-user flag */
+    int  failed_attempts;     /* wrong passwords since the last reset (login lockout) */
+    long long last_failed_time; /* time of the last wrong password, 0 if none */
 };
 
 struct Account {              /* accounts.dat */
