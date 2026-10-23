@@ -4,24 +4,37 @@
  *
  * Users:   0 admin, 1 man, 2 emp, 3 hetul (account 0), 4 cust (account 1)
  * Money is in paise: 100000 paise = 1000.00 rupees.
+ *
+ * Day 4: passwords are now stored as SHA-512 hashes (see common/password.c).
+ * The plain passwords below are only what you TYPE when you log in.
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "structs.h"
 #include "storage.h"
+#include "password.h"
 
 static void add_user(int fd, int id, const char *username, const char *password,
                      int role, const char *name, int account_id)
 {
     struct User u;
+    char hash[HASH_SIZE];
 
     memset(&u, 0, sizeof(u));              /* zero everything first */
     u.user_id = id;
     strncpy(u.username, username, sizeof(u.username) - 1);
-    strncpy(u.password, password, sizeof(u.password) - 1);
+
+    /* store the hash, never the plain password */
+    if (hash_password(password, hash, sizeof(hash)) == -1) {
+        fprintf(stderr, "could not hash the password for %s\n", username);
+        exit(1);
+    }
+    strncpy(u.password, hash, sizeof(u.password) - 1);
+
     u.role = role;
     strncpy(u.name, name, sizeof(u.name) - 1);
     strncpy(u.phone, "9999900000", sizeof(u.phone) - 1);

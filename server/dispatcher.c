@@ -75,7 +75,16 @@ int dispatch(struct session *s, const struct request *req)
     case OP_LOGIN:   return handle_login(s, req);
     case OP_LOGOUT:  return handle_logout(s, req);
     case OP_EXIT:    return handle_exit(s, req);
+    case OP_CHANGE_PASSWORD: return handle_change_password(s, req);
     case OP_ECHO:    return handle_echo(s, req);
+    /* customer */
+    case OP_VIEW_BALANCE: return handle_view_balance(s, req);
+    case OP_DEPOSIT:      return handle_deposit(s, req);
+    case OP_WITHDRAW:     return handle_withdraw(s, req);
+    case OP_TRANSFER:     return handle_transfer(s, req);
+    case OP_APPLY_LOAN:   return handle_apply_loan(s, req);
+    case OP_ADD_FEEDBACK: return handle_add_feedback(s, req);
+    case OP_VIEW_HISTORY: return handle_view_history(s, req);
     default:         return reply(s, ST_ERR_BAD_REQUEST, "Not implemented yet");
     }
 }

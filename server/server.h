@@ -18,6 +18,9 @@
 #define LOCKOUT_SECONDS     (30 * 60)
 #endif
 
+/* Shortest password allowed when changing a password (Day 4). */
+#define MIN_PASSWORD_LENGTH 3
+
 /* One of these per connected client. It lives in that client's thread only,
  * so no other thread touches it and it needs no lock. */
 struct session {
@@ -42,6 +45,15 @@ int reply(struct session *s, int status, const char *message);  /* one simple re
 int handle_login(struct session *s, const struct request *req);
 int handle_logout(struct session *s, const struct request *req);
 int handle_exit(struct session *s, const struct request *req);
+int handle_change_password(struct session *s, const struct request *req);
+/* customer (Day 4) */
+int handle_view_balance(struct session *s, const struct request *req);
+int handle_deposit(struct session *s, const struct request *req);
+int handle_withdraw(struct session *s, const struct request *req);
+int handle_transfer(struct session *s, const struct request *req);
+int handle_apply_loan(struct session *s, const struct request *req);
+int handle_add_feedback(struct session *s, const struct request *req);
+int handle_view_history(struct session *s, const struct request *req);
 int handle_echo(struct session *s, const struct request *req);
 
 #endif
