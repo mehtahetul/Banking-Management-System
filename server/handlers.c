@@ -10,6 +10,7 @@
 #include "storage.h"
 #include "netio.h"
 #include "password.h"
+#include "sessions.h"
 
 /* ---------- helpers ---------- */
 
@@ -236,7 +237,18 @@ int handle_login(struct session *s, const struct request *req)
         return reply(s, ST_ERR_BAD_CREDENTIALS, msg);
     }
 
-    /* LOGIN_OK */
+        /* LOGIN_OK: the password was right. Now claim the session flag.
+     * This comes AFTER the password check, and being refused here does not
+     * count as a failed attempt. */
+    rc = sessions_login(fresh.user_id);
+    if (rc == SESS_ALREADY) {
+        printf("[fd %d] login refused: '%s' is already logged in\n", s->fd, username);
+        return reply(s, ST_ERR_ALREADY_LOGGED_IN,
+                     "This user is already logged in on another connection");
+    }
+    if (rc == SESS_ERROR)
+        return reply(s, ST_ERR_INTERNAL, "Server error while starting the session");
+
     u = fresh;
     s->logged_in = 1;
     s->user_id = u.user_id;
@@ -261,6 +273,8 @@ int handle_logout(struct session *s, const struct request *req)
 {
     (void)req;
     printf("[fd %d] logout: user %d\n", s->fd, s->user_id);
+    if (s->logged_in && sessions_logout(s->user_id) == -1)
+      printf("[fd %d] could not clear the logged_in flag of user %d\n", s->fd, s->user_id);
     s->logged_in = 0;
     s->user_id = NO_ID;
     s->role = -1;
@@ -274,6 +288,18 @@ int handle_exit(struct session *s, const struct request *req)
     if (reply(s, ST_OK, "Goodbye") == SEND_FAILED)
         return SEND_FAILED;
     return CLOSE_CONN;
+}
+
+/* Called by the client thread when the connection ends for ANY reason
+ * (exit, client closed, client killed, lost connection). If the user never
+ * logged out, clear the flag here so the session cannot get stuck. */
+void session_end(struct session *s)
+{
+    if (!s->logged_in)
+        return;
+    if (sessions_logout(s->user_id) == -1)
+        printf("[fd %d] could not clear the logged_in flag of user %d\n", s->fd, s->user_id);
+    s->logged_in = 0;
 }
 
 /* Change the logged-in user's own password.

@@ -17,6 +17,7 @@
 
 #include "server.h"
 #include "netio.h"
+#include "sessions.h"
 
 /* Runs in its own thread, one per connected client. */
 static void *client_thread(void *arg)
@@ -41,9 +42,18 @@ static void *client_thread(void *arg)
         }
     }
 
+    session_end(s);        /* clear the logged_in flag if still set */
     close(s->fd);
     free(s);
     return NULL;
+}
+
+/* Ctrl+C or kill: remove the semaphore, then stop. */
+static void stop_server(int sig)
+{
+    (void)sig;
+    sessions_cleanup();
+    _exit(0);
 }
 
 int main(void)
@@ -55,6 +65,8 @@ int main(void)
     /* Writing to a client that already disconnected would raise SIGPIPE and
      * kill the whole server. Ignore it: write() then just returns -1. */
     signal(SIGPIPE, SIG_IGN);
+    signal(SIGINT, stop_server);
+    signal(SIGTERM, stop_server);
 
     listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (listen_fd == -1) {
@@ -80,6 +92,14 @@ int main(void)
         perror("listen");
         return 1;
     }
+
+    /* Only now, when we know no other server owns the port: create the
+     * semaphore (removing an old one) and reset every logged_in flag. If this
+     * ran before bind, a second server started by mistake would delete the
+     * running server's semaphore and then fail at bind. */
+    if (sessions_init() == -1)
+        return 1;
+
     printf("Bank server listening on port %d\n", SERVER_PORT);
 
     for (;;) {

@@ -55,5 +55,6 @@ int handle_apply_loan(struct session *s, const struct request *req);
 int handle_add_feedback(struct session *s, const struct request *req);
 int handle_view_history(struct session *s, const struct request *req);
 int handle_echo(struct session *s, const struct request *req);
+void session_end(struct session *s);   /* clear the logged_in flag if still set */
 
 #endif
