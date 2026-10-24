@@ -1,0 +1,152 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="bank-class-diagram" name="1 - Data model (class diagram)">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- User -->
+        <mxCell id="user" value="User  (users.dat, 304 bytes)" style="swimlane;fontStyle=1;align=center;startSize=28;horizontal=1;collapsible=0;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="300" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="user_f" value="+ user_id : int  (key)&lt;br&gt;+ username : char[32]  (unique)&lt;br&gt;+ password : char[128]  (SHA-512 hash)&lt;br&gt;+ role : int  (0 cust, 1 emp, 2 mgr, 3 admin)&lt;br&gt;+ name : char[50]&lt;br&gt;+ phone : char[16]&lt;br&gt;+ email : char[50]&lt;br&gt;+ account_id : int  (-1 for staff)&lt;br&gt;+ logged_in : int  (0/1, one session per user)&lt;br&gt;+ failed_attempts : int  (wrong passwords)&lt;br&gt;+ last_failed_time : long long" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;whiteSpace=wrap;overflow=hidden;" vertex="1" parent="user">
+          <mxGeometry y="28" width="300" height="192" as="geometry"/>
+        </mxCell>
+
+        <!-- Account -->
+        <mxCell id="account" value="Account  (accounts.dat, 24 bytes)" style="swimlane;fontStyle=1;align=center;startSize=28;horizontal=1;collapsible=0;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="450" y="40" width="270" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="account_f" value="+ account_id : int  (key)&lt;br&gt;+ user_id : int  (owner)&lt;br&gt;+ balance : long long  (paise)&lt;br&gt;+ status : int  (0 deactivated, 1 active)" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;whiteSpace=wrap;overflow=hidden;" vertex="1" parent="account">
+          <mxGeometry y="28" width="270" height="82" as="geometry"/>
+        </mxCell>
+
+        <!-- Transaction -->
+        <mxCell id="txn" value="Transaction  (txns.dat, 48 bytes)" style="swimlane;fontStyle=1;align=center;startSize=28;horizontal=1;collapsible=0;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="850" y="40" width="300" height="150" as="geometry"/>
+        </mxCell>
+        <mxCell id="txn_f" value="+ txn_id : int  (key)&lt;br&gt;+ account_id : int  (whose passbook)&lt;br&gt;+ type : int  (0 dep, 1 wd, 2 out, 3 in)&lt;br&gt;+ amount : long long  (paise)&lt;br&gt;+ balance_after : long long&lt;br&gt;+ other_account_id : int  (-1 if none)&lt;br&gt;+ timestamp : long long" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;whiteSpace=wrap;overflow=hidden;" vertex="1" parent="txn">
+          <mxGeometry y="28" width="300" height="122" as="geometry"/>
+        </mxCell>
+
+        <!-- Loan -->
+        <mxCell id="loan" value="Loan  (loans.dat, 32 bytes)" style="swimlane;fontStyle=1;align=center;startSize=28;horizontal=1;collapsible=0;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="450" y="340" width="270" height="150" as="geometry"/>
+        </mxCell>
+        <mxCell id="loan_f" value="+ loan_id : int  (key)&lt;br&gt;+ account_id : int  (applicant)&lt;br&gt;+ amount : long long  (paise)&lt;br&gt;+ status : int  (0 applied, 1 assigned,&lt;br&gt;&amp;nbsp;&amp;nbsp;2 approved, 3 rejected)&lt;br&gt;+ assigned_to : int  (-1 until assigned)&lt;br&gt;+ applied_time : long long" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;whiteSpace=wrap;overflow=hidden;" vertex="1" parent="loan">
+          <mxGeometry y="28" width="270" height="122" as="geometry"/>
+        </mxCell>
+
+        <!-- Feedback -->
+        <mxCell id="fb" value="Feedback  (feedback.dat, 264 bytes)" style="swimlane;fontStyle=1;align=center;startSize=28;horizontal=1;collapsible=0;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="300" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="fb_f" value="+ feedback_id : int  (key)&lt;br&gt;+ user_id : int  (writer)&lt;br&gt;+ message : char[256]" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;whiteSpace=wrap;overflow=hidden;" vertex="1" parent="fb">
+          <mxGeometry y="28" width="300" height="72" as="geometry"/>
+        </mxCell>
+
+        <!-- Notes -->
+        <mxCell id="note" value="&lt;b&gt;Notes&lt;/b&gt;&lt;br&gt;Id rule: id = record number in its file (record n starts at byte n x record size).&lt;br&gt;Money is stored as long long paise, never float.&lt;br&gt;Solid arrow = reference by id. Dashed arrow = optional reference.&lt;br&gt;A customer has one account; staff (employee, manager, admin) have none.&lt;br&gt;One account has many transactions and loans." style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;whiteSpace=wrap;overflow=hidden;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="850" y="340" width="300" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- Relationships -->
+        <mxCell id="e_user_account" value="1 : 0..1&lt;br&gt;owns" style="endArrow=open;endFill=0;html=1;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="user" target="account">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_txn_account" value="many : 1&lt;br&gt;account_id" style="endArrow=open;endFill=0;html=1;exitX=0;exitY=0.25;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="txn" target="account">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_txn_other" value="other_account_id&lt;br&gt;(transfers only)" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0;exitY=0.8;exitDx=0;exitDy=0;entryX=1;entryY=0.8;entryDx=0;entryDy=0;" edge="1" parent="1" source="txn" target="account">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_loan_account" value="many : 1&lt;br&gt;account_id" style="endArrow=open;endFill=0;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="loan" target="account">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_loan_user" value="0..1&lt;br&gt;assigned_to (an employee)" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0;exitY=0.3;exitDx=0;exitDy=0;entryX=1;entryY=0.85;entryDx=0;entryDy=0;" edge="1" parent="1" source="loan" target="user">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_fb_user" value="many : 1&lt;br&gt;user_id" style="endArrow=open;endFill=0;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="fb" target="user">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="bank-architecture" name="2 - Layers, roles and operations">
+    <mxGraphModel dx="1400" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Layers: request path, left to right -->
+        <mxCell id="l_client" value="&lt;b&gt;bankclient&lt;/b&gt;&lt;br&gt;menu for the user's role&lt;br&gt;checks formats only&lt;br&gt;client/*.c" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="170" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="l_server" value="&lt;b&gt;server.c&lt;/b&gt;&lt;br&gt;accept loop on port 8080&lt;br&gt;one thread per client&lt;br&gt;one struct session each" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="250" y="40" width="170" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="l_disp" value="&lt;b&gt;dispatcher.c&lt;/b&gt;&lt;br&gt;opcode to handler&lt;br&gt;login check, role check&lt;br&gt;re-reads the stored role" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="460" y="40" width="170" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="l_handlers" value="&lt;b&gt;handlers_*.c&lt;/b&gt;&lt;br&gt;one file per role&lt;br&gt;every business rule is&lt;br&gt;checked here" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="670" y="40" width="170" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="l_storage" value="&lt;b&gt;storage.c&lt;/b&gt;&lt;br&gt;read / write one record&lt;br&gt;OFD record locks&lt;br&gt;append lock" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="880" y="40" width="170" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="l_data" value="&lt;b&gt;data/*.dat&lt;/b&gt;&lt;br&gt;users, accounts, txns,&lt;br&gt;loans, feedback&lt;br&gt;fixed-size records" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="40" width="170" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="l_sessions" value="&lt;b&gt;sessions.c&lt;/b&gt;&lt;br&gt;semaphore + logged_in flag&lt;br&gt;(one session per user)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="670" y="190" width="170" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a1" value="TCP" style="endArrow=block;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="l_client" target="l_server">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a2" style="endArrow=block;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="l_server" target="l_disp">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a3" style="endArrow=block;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="l_disp" target="l_handlers">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a4" style="endArrow=block;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="l_handlers" target="l_storage">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a5" style="endArrow=block;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="l_storage" target="l_data">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a6" value="login / logout" style="endArrow=block;dashed=1;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="l_sessions" target="l_handlers">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="intro" value="&lt;b&gt;Roles and what each can do&lt;/b&gt; (each list is implemented in the handler file named in the box)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="290" width="900" height="24" as="geometry"/>
+        </mxCell>
+
+        <!-- Roles and operations -->
+        <mxCell id="r_all" value="&lt;b&gt;All roles&lt;/b&gt;&lt;br&gt;handlers_auth.c&lt;br&gt;&lt;br&gt;+ login()&lt;br&gt;+ logout()&lt;br&gt;+ exit()&lt;br&gt;+ change_password()&lt;br&gt;&lt;br&gt;5 wrong passwords lock the user for 30 minutes.&lt;br&gt;Reads / writes: users" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="330" width="220" height="230" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_cust" value="&lt;b&gt;Customer&lt;/b&gt;  (role 0)&lt;br&gt;handlers_customer.c&lt;br&gt;&lt;br&gt;+ view_balance()&lt;br&gt;+ deposit()&lt;br&gt;+ withdraw()&lt;br&gt;+ transfer()&lt;br&gt;+ apply_loan()&lt;br&gt;+ add_feedback()&lt;br&gt;+ view_history()&lt;br&gt;&lt;br&gt;Reads / writes: accounts, txns, loans, feedback" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="280" y="330" width="220" height="230" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_emp" value="&lt;b&gt;Employee&lt;/b&gt;  (role 1)&lt;br&gt;handlers_employee.c&lt;br&gt;&lt;br&gt;+ add_customer()&lt;br&gt;+ modify_customer()&lt;br&gt;+ process_loan()  (approve / reject)&lt;br&gt;+ view_assigned_loans()&lt;br&gt;+ view_passbook()&lt;br&gt;&lt;br&gt;Reads / writes: users, accounts, loans, txns" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="520" y="330" width="220" height="230" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_mgr" value="&lt;b&gt;Manager&lt;/b&gt;  (role 2)&lt;br&gt;handlers_manager.c&lt;br&gt;&lt;br&gt;+ set_account_status()  (activate / deactivate)&lt;br&gt;+ assign_loan()  (to an employee)&lt;br&gt;+ review_feedback()&lt;br&gt;&lt;br&gt;Reads / writes: accounts, loans, users, feedback" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="760" y="330" width="220" height="230" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_adm" value="&lt;b&gt;Administrator&lt;/b&gt;  (role 3)&lt;br&gt;handlers_admin.c&lt;br&gt;&lt;br&gt;+ add_employee()&lt;br&gt;+ modify_user()  (customer or employee)&lt;br&gt;+ set_role()  (employee / manager)&lt;br&gt;&lt;br&gt;Reads / writes: users, loans" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="330" width="220" height="230" as="geometry"/>
+        </mxCell>
+
+        <!-- Rules -->
+        <mxCell id="rules" value="&lt;b&gt;Rules that make it safe&lt;/b&gt;&lt;br&gt;Every request goes through dispatch(): login check, then role check from a permission table.&lt;br&gt;Only storage.c touches the data files. Only server.c touches sockets on the server side.&lt;br&gt;Lock order: sessions semaphore, then the record lock. Accounts (lower id first), then the append lock. Never reversed.&lt;br&gt;A transfer holds both account locks while it writes both history rows and both balances." style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;whiteSpace=wrap;overflow=hidden;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="590" width="1180" height="100" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

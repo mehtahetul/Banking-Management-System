@@ -1,12 +1,18 @@
-data/*.dat
-*.o
+# built programs
+bankserver
+bankserver_fast
+bankclient
+testclient
 seed
 dump
 race
 threadrace
 protosize
-bankserver
-bankserver_fast
-testclient
 test_password
-bankclient
+*.o
+
+# runtime data (created by ./seed)
+data/*.dat
+
+# macOS
+.DS_Store
