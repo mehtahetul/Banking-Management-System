@@ -1,6 +1,6 @@
 # Banking Management System
 
-A multi-client banking server written in C for Linux, built for the **CS-513 System Software** mini project (IIIT Bangalore). Many clients connect over TCP at the same time. The server keeps all data in binary files and uses record locks, a semaphore and threads to stay correct under concurrency.
+A multi-client banking server written in C for Linux, built for the **CS-513 System Software** mini project. Many clients connect over TCP at the same time. The server keeps all data in binary files and uses record locks, a semaphore and threads to stay correct under concurrency.
 
 ## Features
 
