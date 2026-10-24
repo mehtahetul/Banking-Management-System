@@ -12,18 +12,18 @@ PASSWORD = common/password.c
 all: seed dump race
 
 seed: tests/seed.c $(STORAGE) $(PASSWORD) common/structs.h storage/storage.h common/password.h
-	$(CC) $(CFLAGS) -o seed tests/seed.c $(STORAGE) $(PASSWORD) $(LIBS)
+    $(CC) $(CFLAGS) -o seed tests/seed.c $(STORAGE) $(PASSWORD) $(LIBS)
 
 dump: tests/dump.c $(STORAGE) common/structs.h storage/storage.h
-	$(CC) $(CFLAGS) -o dump tests/dump.c $(STORAGE)
+    $(CC) $(CFLAGS) -o dump tests/dump.c $(STORAGE)
 
 race: tests/race.c $(STORAGE) common/structs.h storage/storage.h
-	$(CC) $(CFLAGS) -o race tests/race.c $(STORAGE)
+    $(CC) $(CFLAGS) -o race tests/race.c $(STORAGE)
 
 test_password: tests/test_password.c $(PASSWORD) common/password.h
-	$(CC) $(CFLAGS) -o test_password tests/test_password.c $(PASSWORD) $(LIBS)
+    $(CC) $(CFLAGS) -o test_password tests/test_password.c $(PASSWORD) $(LIBS)
 
 clean:
-	rm -f seed dump race test_password
+    rm -f seed dump race test_password
 
 .PHONY: all clean

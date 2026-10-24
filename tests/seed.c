@@ -1,8 +1,10 @@
 /* seed.c - creates sample records so dump and login have something to work with.
- * Run from the bank/ folder:  ./seed
+ * Run from the project root:  ./seed   (with the server STOPPED)
  * It wipes and recreates the data files each time.
  *
  * Users:   0 admin, 1 man, 2 emp, 3 hetul (account 0), 4 cust (account 1)
+ * Loans:   0 hetul's, applied and not assigned (for the manager to assign)
+ *          1 cust's, already assigned to emp (so an employee can process it)
  * Money is in paise: 100000 paise = 1000.00 rupees.
  *
  * Day 4: passwords are now stored as SHA-512 hashes (see common/password.c).
@@ -77,6 +79,23 @@ static void add_deposit(int fd, int id, int account_id, long long amount)
         perror("write txn");
 }
 
+static void add_loan(int fd, int id, int account_id, long long amount,
+                     int status, int assigned_to)
+{
+    struct Loan l;
+
+    memset(&l, 0, sizeof(l));
+    l.loan_id = id;
+    l.account_id = account_id;
+    l.amount = amount;
+    l.status = status;
+    l.assigned_to = assigned_to;
+    l.applied_time = (long long)time(NULL);
+
+    if (storage_write(fd, id, &l, sizeof(l)) == -1)
+        perror("write loan");
+}
+
 int main(void)
 {
     int fd;
@@ -112,18 +131,12 @@ int main(void)
     add_deposit(fd, 1, 1, 50000);
     storage_close(fd);
 
-    /* one loan application from hetul's account, not yet assigned */
+    /* loan 0: hetul's account, applied and not assigned yet (5000.00)
+     * loan 1: cust's account, already assigned to emp (user 2) (2000.00) */
     fd = storage_open(LOANS_FILE);
     if (fd == -1) { perror("open loans"); return 1; }
-    struct Loan l;
-    memset(&l, 0, sizeof(l));
-    l.loan_id = 0;
-    l.account_id = 0;
-    l.amount = 500000;
-    l.status = LOAN_APPLIED;
-    l.assigned_to = NO_ID;
-    l.applied_time = (long long)time(NULL);
-    storage_write(fd, 0, &l, sizeof(l));
+    add_loan(fd, 0, 0, 500000, LOAN_APPLIED,  NO_ID);
+    add_loan(fd, 1, 1, 200000, LOAN_ASSIGNED, 2);
     storage_close(fd);
 
     /* one feedback entry from hetul */

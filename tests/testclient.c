@@ -13,6 +13,27 @@
  *   loan <rupees>         send OP_APPLY_LOAN
  *   feedback <text>       send OP_ADD_FEEDBACK (put the text in quotes)
  *   history               send OP_VIEW_HISTORY (newest first)
+ *
+ * Employee (Day 5):
+ *   addcustomer <user> <pass> <name> <phone> <email>   send OP_ADD_CUSTOMER
+ *   modify <user_id> <name> <phone> <email>            send OP_MODIFY_CUSTOMER
+ *                         use "" for a field you do not want to change
+ *   process <loan_id> approve|reject                   send OP_PROCESS_LOAN
+ *   assigned              send OP_VIEW_ASSIGNED_LOANS
+ *   passbook <account_id> send OP_VIEW_PASSBOOK (newest first)
+ *
+ * Manager (Day 5):
+ *   setstatus <account_id> active|deactivated          send OP_SET_ACCOUNT_STATUS
+ *   assign <loan_id> <employee_user_id>                send OP_ASSIGN_LOAN
+ *   feedbacks             send OP_REVIEW_FEEDBACK (newest first)
+ *
+ * Administrator (Day 5):
+ *   addemployee <user> <pass> <name> <phone> <email>   send OP_ADD_EMPLOYEE
+ *   modifyuser <user_id> <name> <phone> <email>        send OP_MODIFY_USER
+ *   setrole <user_id> customer|employee|manager|admin  send OP_SET_ROLE
+ *                         (the server only accepts employee or manager)
+ *
+ * Other:
  *   echo <text>           send OP_ECHO
  *   raw <opcode>          send a request with this opcode and an empty payload
  *   exit                  send OP_EXIT
@@ -20,8 +41,7 @@
  *
  * Example:  ./testclient login hetul hetul123 echo hi logout exit
  *
- * Build from the project root:
- *   gcc -Wall -Wextra -I common -o testclient tests/testclient.c common/netio.c
+ * Build from the project root:  make testclient
  */
 #include <arpa/inet.h>
 #include <limits.h>
@@ -46,6 +66,16 @@ static const char *role_name(int role)
     case ROLE_ADMIN:    return "admin";
     default:            return "?";
     }
+}
+
+/* Role word -> ROLE_* value, or -1 if the word is not a role. */
+static int parse_role(const char *word)
+{
+    if (strcmp(word, "customer") == 0) return ROLE_CUSTOMER;
+    if (strcmp(word, "employee") == 0) return ROLE_EMPLOYEE;
+    if (strcmp(word, "manager") == 0)  return ROLE_MANAGER;
+    if (strcmp(word, "admin") == 0)    return ROLE_ADMIN;
+    return -1;
 }
 
 /* Turn text like "50", "50.5" or "50.25" (rupees) into paise, using only
@@ -138,6 +168,29 @@ static void show_txn(const struct Transaction *t)
            amount, after, other, when);
 }
 
+static void show_loan(const struct Loan *l)
+{
+    static const char *status_name[] = { "applied", "assigned", "approved", "rejected" };
+    char amount[40], when[40], assigned[16];
+    time_t tt = (time_t)l->applied_time;
+    struct tm *tm = localtime(&tt);
+
+    format_money(l->amount, amount, sizeof(amount));
+    if (tm != NULL)
+        strftime(when, sizeof(when), "%d:%m:%Y -- %H:%M:%S", tm);
+    else
+        snprintf(when, sizeof(when), "?");
+    if (l->assigned_to == NO_ID)
+        snprintf(assigned, sizeof(assigned), "-");
+    else
+        snprintf(assigned, sizeof(assigned), "%d", l->assigned_to);
+
+    printf("     loan #%d  account %d  amount %12s  %-9s  assigned to %s  applied %s\n",
+           l->loan_id, l->account_id, amount,
+           (l->status >= 0 && l->status <= 3) ? status_name[l->status] : "?",
+           assigned, when);
+}
+
 static void show(const struct response *r)
 {
     printf("  <- [status %d] %s\n", r->status, r->message);
@@ -151,8 +204,16 @@ static void show(const struct response *r)
 
         format_money(r->u.balance.balance, money, sizeof(money));
         printf("     balance: %s rupees (%lld paise)\n", money, r->u.balance.balance);
-    } else if (r->kind == RESP_TXN)
+    } else if (r->kind == RESP_CREATED)
+        printf("     created: user_id=%d account_id=%d\n",
+               r->u.created.user_id, r->u.created.account_id);
+    else if (r->kind == RESP_TXN)
         show_txn(&r->u.txn);
+    else if (r->kind == RESP_LOAN)
+        show_loan(&r->u.loan);
+    else if (r->kind == RESP_FEEDBACK)
+        printf("     feedback #%d from user %d: %s\n",
+               r->u.feedback.feedback_id, r->u.feedback.user_id, r->u.feedback.message);
 }
 
 /* Send one request and print every response of the reply.
@@ -187,7 +248,12 @@ static void usage(void)
         "usage: testclient <word> ...\n"
         "  login <user> <pass> | logout | chpass <old> <new> | echo <text> | raw <opcode> | exit | sleep <seconds>\n"
         "  balance | deposit <rupees> | withdraw <rupees> | transfer <to_account> <rupees>\n"
-        "  loan <rupees> | feedback <text> | history\n");
+        "  loan <rupees> | feedback <text> | history\n"
+        "  addcustomer <user> <pass> <name> <phone> <email> | modify <user_id> <name> <phone> <email>\n"
+        "  process <loan_id> approve|reject | assigned | passbook <account_id>\n"
+        "  setstatus <account_id> active|deactivated | assign <loan_id> <employee_id> | feedbacks\n"
+        "  addemployee <user> <pass> <name> <phone> <email> | modifyuser <user_id> <name> <phone> <email>\n"
+        "  setrole <user_id> customer|employee|manager|admin\n");
 }
 
 int main(int argc, char *argv[])
@@ -288,6 +354,101 @@ int main(int argc, char *argv[])
             req.opcode = OP_VIEW_HISTORY;
             printf("-> history\n");
             i += 1;
+        } else if (strcmp(word, "addcustomer") == 0 && i + 5 < argc) {
+            req.opcode = OP_ADD_CUSTOMER;
+            strncpy(req.u.new_user.username, argv[i + 1], sizeof(req.u.new_user.username) - 1);
+            strncpy(req.u.new_user.password, argv[i + 2], sizeof(req.u.new_user.password) - 1);
+            strncpy(req.u.new_user.name, argv[i + 3], sizeof(req.u.new_user.name) - 1);
+            strncpy(req.u.new_user.phone, argv[i + 4], sizeof(req.u.new_user.phone) - 1);
+            strncpy(req.u.new_user.email, argv[i + 5], sizeof(req.u.new_user.email) - 1);
+            printf("-> addcustomer %s\n", argv[i + 1]);
+            i += 6;
+        } else if (strcmp(word, "modify") == 0 && i + 4 < argc) {
+            req.opcode = OP_MODIFY_CUSTOMER;
+            req.u.modify_user.user_id = atoi(argv[i + 1]);
+            strncpy(req.u.modify_user.name, argv[i + 2], sizeof(req.u.modify_user.name) - 1);
+            strncpy(req.u.modify_user.phone, argv[i + 3], sizeof(req.u.modify_user.phone) - 1);
+            strncpy(req.u.modify_user.email, argv[i + 4], sizeof(req.u.modify_user.email) - 1);
+            printf("-> modify user %s\n", argv[i + 1]);
+            i += 5;
+        } else if (strcmp(word, "process") == 0 && i + 2 < argc) {
+            req.opcode = OP_PROCESS_LOAN;
+            req.u.process_loan.loan_id = atoi(argv[i + 1]);
+            if (strcmp(argv[i + 2], "approve") == 0)
+                req.u.process_loan.approve = 1;
+            else if (strcmp(argv[i + 2], "reject") == 0)
+                req.u.process_loan.approve = 0;
+            else {
+                fprintf(stderr, "process: say 'approve' or 'reject', not '%s'\n", argv[i + 2]);
+                close(fd);
+                return 1;
+            }
+            printf("-> process loan %s: %s\n", argv[i + 1], argv[i + 2]);
+            i += 3;
+        } else if (strcmp(word, "assigned") == 0) {
+            req.opcode = OP_VIEW_ASSIGNED_LOANS;
+            printf("-> assigned\n");
+            i += 1;
+        } else if (strcmp(word, "passbook") == 0 && i + 1 < argc) {
+            req.opcode = OP_VIEW_PASSBOOK;
+            req.u.account.account_id = atoi(argv[i + 1]);
+            printf("-> passbook of account %s\n", argv[i + 1]);
+            i += 2;
+        } else if (strcmp(word, "setstatus") == 0 && i + 2 < argc) {
+            req.opcode = OP_SET_ACCOUNT_STATUS;
+            req.u.set_status.account_id = atoi(argv[i + 1]);
+            if (strcmp(argv[i + 2], "active") == 0)
+                req.u.set_status.status = ACC_ACTIVE;
+            else if (strcmp(argv[i + 2], "deactivated") == 0)
+                req.u.set_status.status = ACC_DEACTIVATED;
+            else {
+                fprintf(stderr, "setstatus: say 'active' or 'deactivated', not '%s'\n", argv[i + 2]);
+                close(fd);
+                return 1;
+            }
+            printf("-> setstatus account %s: %s\n", argv[i + 1], argv[i + 2]);
+            i += 3;
+        } else if (strcmp(word, "assign") == 0 && i + 2 < argc) {
+            req.opcode = OP_ASSIGN_LOAN;
+            req.u.assign_loan.loan_id = atoi(argv[i + 1]);
+            req.u.assign_loan.employee_id = atoi(argv[i + 2]);
+            printf("-> assign loan %s to user %s\n", argv[i + 1], argv[i + 2]);
+            i += 3;
+        } else if (strcmp(word, "feedbacks") == 0) {
+            req.opcode = OP_REVIEW_FEEDBACK;
+            printf("-> feedbacks\n");
+            i += 1;
+        } else if (strcmp(word, "addemployee") == 0 && i + 5 < argc) {
+            req.opcode = OP_ADD_EMPLOYEE;
+            strncpy(req.u.new_user.username, argv[i + 1], sizeof(req.u.new_user.username) - 1);
+            strncpy(req.u.new_user.password, argv[i + 2], sizeof(req.u.new_user.password) - 1);
+            strncpy(req.u.new_user.name, argv[i + 3], sizeof(req.u.new_user.name) - 1);
+            strncpy(req.u.new_user.phone, argv[i + 4], sizeof(req.u.new_user.phone) - 1);
+            strncpy(req.u.new_user.email, argv[i + 5], sizeof(req.u.new_user.email) - 1);
+            printf("-> addemployee %s\n", argv[i + 1]);
+            i += 6;
+        } else if (strcmp(word, "modifyuser") == 0 && i + 4 < argc) {
+            req.opcode = OP_MODIFY_USER;
+            req.u.modify_user.user_id = atoi(argv[i + 1]);
+            strncpy(req.u.modify_user.name, argv[i + 2], sizeof(req.u.modify_user.name) - 1);
+            strncpy(req.u.modify_user.phone, argv[i + 3], sizeof(req.u.modify_user.phone) - 1);
+            strncpy(req.u.modify_user.email, argv[i + 4], sizeof(req.u.modify_user.email) - 1);
+            printf("-> modifyuser %s\n", argv[i + 1]);
+            i += 5;
+        } else if (strcmp(word, "setrole") == 0 && i + 2 < argc) {
+            int role = parse_role(argv[i + 2]);
+
+            if (role == -1) {
+                fprintf(stderr, "setrole: say customer, employee, manager or admin, not '%s'\n",
+                        argv[i + 2]);
+                close(fd);
+                return 1;
+            }
+            req.opcode = OP_SET_ROLE;
+            req.u.set_role.user_id = atoi(argv[i + 1]);
+            req.u.set_role.role = role;
+            printf("-> setrole user %s: %s\n", argv[i + 1], argv[i + 2]);
+            i += 3;
         } else if (strcmp(word, "exit") == 0) {
             req.opcode = OP_EXIT;
             printf("-> exit\n");
