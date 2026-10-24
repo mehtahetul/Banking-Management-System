@@ -26,7 +26,6 @@ static const struct rule rules[] = {
     { OP_LOGOUT,              1, EVERYONE },
     { OP_EXIT,                0, EVERYONE },
     { OP_CHANGE_PASSWORD,     1, EVERYONE },
-    { OP_ECHO,                0, EVERYONE },   /* test only, remove at the end */
     /* customer */
     { OP_VIEW_BALANCE,        1, CUSTOMER },
     { OP_DEPOSIT,             1, CUSTOMER },
@@ -110,7 +109,6 @@ int dispatch(struct session *s, const struct request *req)
     case OP_LOGOUT:  return handle_logout(s, req);
     case OP_EXIT:    return handle_exit(s, req);
     case OP_CHANGE_PASSWORD: return handle_change_password(s, req);
-    case OP_ECHO:    return handle_echo(s, req);
     /* customer */
     case OP_VIEW_BALANCE: return handle_view_balance(s, req);
     case OP_DEPOSIT:      return handle_deposit(s, req);

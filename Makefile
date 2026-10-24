@@ -1,10 +1,17 @@
-# Makefile - builds the server, the clients and the helper tools.
-#   make                 build bankserver, bankclient, testclient, seed, dump
+# Makefile - builds the server, the clients and the helper and test tools.
+#   make                 build everything below
 #   make bankserver      just the server
 #   make bankclient      just the menu client
 #   make bankserver_fast server with a 3-second login lockout (for testing)
 #   make clean           delete the built programs
-# (race, threadrace and test_password are still built by Makefile.day1.)
+#
+# Programs:
+#   bankserver, bankclient    the real server and menu client
+#   testclient                scripted test client (words on the command line)
+#   seed, dump                reset the data files / print them
+#   race, threadrace          lost-update demos (Day 1 and Day 3)
+#   protosize                 prints the message sizes and the port
+#   test_password             checks hash_password / verify_password
 #
 # Recipe lines start with ">" instead of the usual tab character. That is
 # what the next line switches on. It avoids the "missing separator" error
@@ -29,7 +36,10 @@ CLIENT_SRC = client/main.c client/ui.c client/menu_common.c \
 HEADERS = common/structs.h common/protocol.h common/netio.h common/password.h \
           storage/storage.h server/server.h server/sessions.h client/client.h
 
-all: bankserver bankclient testclient seed dump
+PROGRAMS = bankserver bankclient testclient seed dump \
+           race threadrace protosize test_password
+
+all: $(PROGRAMS)
 
 bankserver: $(SERVER_SRC) $(HEADERS)
 > $(CC) $(CFLAGS) -o bankserver $(SERVER_SRC) $(LIBS)
@@ -49,7 +59,19 @@ seed: tests/seed.c storage/storage.c common/password.c $(HEADERS)
 dump: tests/dump.c storage/storage.c $(HEADERS)
 > $(CC) $(CFLAGS) -o dump tests/dump.c storage/storage.c
 
+race: tests/race.c storage/storage.c $(HEADERS)
+> $(CC) $(CFLAGS) -o race tests/race.c storage/storage.c
+
+threadrace: tests/threadrace.c storage/storage.c $(HEADERS)
+> $(CC) $(CFLAGS) -o threadrace tests/threadrace.c storage/storage.c
+
+protosize: tests/protosize.c $(HEADERS)
+> $(CC) $(CFLAGS) -o protosize tests/protosize.c
+
+test_password: tests/test_password.c common/password.c $(HEADERS)
+> $(CC) $(CFLAGS) -o test_password tests/test_password.c common/password.c $(LIBS)
+
 clean:
-> rm -f bankserver bankserver_fast bankclient testclient seed dump
+> rm -f $(PROGRAMS) bankserver_fast
 
 .PHONY: all clean

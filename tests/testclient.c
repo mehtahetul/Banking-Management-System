@@ -34,12 +34,11 @@
  *                         (the server only accepts employee or manager)
  *
  * Other:
- *   echo <text>           send OP_ECHO
  *   raw <opcode>          send a request with this opcode and an empty payload
  *   exit                  send OP_EXIT
  *   sleep <seconds>       wait on the client side (connection stays open)
  *
- * Example:  ./testclient login hetul hetul123 echo hi logout exit
+ * Example:  ./testclient login hetul hetul123 balance logout exit
  *
  * Build from the project root:  make testclient
  */
@@ -246,7 +245,7 @@ static void usage(void)
 {
     fprintf(stderr,
         "usage: testclient <word> ...\n"
-        "  login <user> <pass> | logout | chpass <old> <new> | echo <text> | raw <opcode> | exit | sleep <seconds>\n"
+        "  login <user> <pass> | logout | chpass <old> <new> | raw <opcode> | exit | sleep <seconds>\n"
         "  balance | deposit <rupees> | withdraw <rupees> | transfer <to_account> <rupees>\n"
         "  loan <rupees> | feedback <text> | history\n"
         "  addcustomer <user> <pass> <name> <phone> <email> | modify <user_id> <name> <phone> <email>\n"
@@ -453,11 +452,6 @@ int main(int argc, char *argv[])
             req.opcode = OP_EXIT;
             printf("-> exit\n");
             i += 1;
-        } else if (strcmp(word, "echo") == 0 && i + 1 < argc) {
-            req.opcode = OP_ECHO;
-            strncpy(req.u.echo.text, argv[i + 1], sizeof(req.u.echo.text) - 1);
-            printf("-> echo %s\n", argv[i + 1]);
-            i += 2;
         } else if (strcmp(word, "raw") == 0 && i + 1 < argc) {
             req.opcode = atoi(argv[i + 1]);
             printf("-> raw opcode %d\n", req.opcode);

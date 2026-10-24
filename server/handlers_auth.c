@@ -1,4 +1,4 @@
-/* handlers_auth.c - login, logout, exit, change password, echo.
+/* handlers_auth.c - login, logout, exit, change password.
  * These work for every role. */
 #include <stdio.h>
 #include <string.h>
@@ -300,18 +300,4 @@ int handle_change_password(struct session *s, const struct request *req)
     /* LOGIN_OK: the new hash is already stored. The session stays logged in. */
     printf("[fd %d] password changed: user %d\n", s->fd, s->user_id);
     return reply(s, ST_OK, "Password changed");
-}
-
-/* Test request: send the text back. Needs no login. */
-int handle_echo(struct session *s, const struct request *req)
-{
-    struct response r;
-
-    memset(&r, 0, sizeof(r));
-    r.status = ST_OK;
-    r.kind = RESP_TEXT;
-    r.more = 0;
-    strncpy(r.message, "Echo", sizeof(r.message) - 1);
-    strncpy(r.u.text, req->u.echo.text, sizeof(r.u.text) - 1);
-    return send_response(s, &r);
 }

@@ -27,12 +27,12 @@
 /* ---------- opcodes (request.opcode) ----------
  * Allowed roles are listed here for reference. The server checks them. */
 
-/* all roles (OP_LOGIN needs no login, OP_ECHO is only for testing) */
+/* all roles (OP_LOGIN and OP_EXIT need no login).
+ * Opcode 5 was the test-only OP_ECHO; it is removed and not reused. */
 #define OP_LOGIN                1
 #define OP_LOGOUT               2
 #define OP_EXIT                 3
 #define OP_CHANGE_PASSWORD      4
-#define OP_ECHO                 5
 
 /* customer */
 #define OP_VIEW_BALANCE         10
@@ -77,7 +77,7 @@
 
 /* ---------- response kinds (response.kind): which union member is filled ---------- */
 #define RESP_NONE      0   /* nothing besides status/message (also the end marker) */
-#define RESP_TEXT      1   /* u.text */
+#define RESP_TEXT      1   /* u.text (no server request uses it any more) */
 #define RESP_LOGIN     2   /* u.login */
 #define RESP_BALANCE   3   /* u.balance */
 #define RESP_CREATED   4   /* u.created */
@@ -95,10 +95,6 @@ struct req_login {                 /* OP_LOGIN */
 struct req_change_password {       /* OP_CHANGE_PASSWORD */
     char old_password[128];
     char new_password[128];
-};
-
-struct req_echo {                  /* OP_ECHO */
-    char text[200];
 };
 
 struct req_amount {                /* OP_DEPOSIT, OP_WITHDRAW, OP_APPLY_LOAN */
@@ -161,7 +157,6 @@ struct request {
     union {
         struct req_login           login;
         struct req_change_password change_password;
-        struct req_echo            echo;
         struct req_amount          amount;
         struct req_transfer        transfer;
         struct req_feedback        feedback;

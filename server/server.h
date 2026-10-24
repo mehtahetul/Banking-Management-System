@@ -55,7 +55,6 @@ int handle_login(struct session *s, const struct request *req);
 int handle_logout(struct session *s, const struct request *req);
 int handle_exit(struct session *s, const struct request *req);
 int handle_change_password(struct session *s, const struct request *req);
-int handle_echo(struct session *s, const struct request *req);
 void session_end(struct session *s);   /* clear the logged_in flag if still set */
 
 /* ---------- handlers_customer.c ---------- */
